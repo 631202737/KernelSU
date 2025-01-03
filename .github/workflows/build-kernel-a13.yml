@@ -22,6 +22,15 @@ jobs:
       matrix:
         include:
           - version: "5.10"
+            sub_level: 189
+            os_patch_level: 2023-11
+          - version: "5.10"
+            sub_level: 198
+            os_patch_level: 2024-01
+          - version: "5.10"
+            sub_level: 205
+            os_patch_level: 2024-03
+          - version: "5.10"
             sub_level: 209
             os_patch_level: 2024-05
           - version: "5.10"
@@ -33,9 +42,15 @@ jobs:
           - version: "5.10"
             sub_level: 218
             os_patch_level: 2024-08
-          - version: "5.10"
-            sub_level: 223
-            os_patch_level: 2024-11
+          - version: "5.15"
+            sub_level: 123
+            os_patch_level: 2023-11
+          - version: "5.15"
+            sub_level: 137
+            os_patch_level: 2024-01
+          - version: "5.15"
+            sub_level: 144
+            os_patch_level: 2024-03
           - version: "5.15"
             sub_level: 148
             os_patch_level: 2024-05
@@ -45,12 +60,6 @@ jobs:
           - version: "5.15"
             sub_level: 151
             os_patch_level: 2024-08
-          - version: "5.15"
-            sub_level: 153
-            os_patch_level: 2024-09
-          - version: "5.15"
-            sub_level: 167
-            os_patch_level: 2024-11
     uses: ./.github/workflows/gki-kernel.yml
     secrets: inherit
     with:
@@ -137,11 +146,11 @@ jobs:
       matrix:
         include:
           - version: "5.10"
-            sub_level: 223
-            os_patch_level: 2024-11
+            sub_level: 218
+            os_patch_level: 2024-08
           - version: "5.15"
-            sub_level: 167
-            os_patch_level: 2024-11
+            sub_level: 151
+            os_patch_level: 2024-08
     uses: ./.github/workflows/gki-kernel.yml
     with:
       version: android13-${{ matrix.version }}
