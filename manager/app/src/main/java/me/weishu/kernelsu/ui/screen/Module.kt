@@ -56,6 +56,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberTopAppBarState
@@ -66,6 +67,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,7 +95,6 @@ import kotlinx.coroutines.withContext
 import me.weishu.kernelsu.Natives
 import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.component.ConfirmResult
-import me.weishu.kernelsu.ui.component.SearchAppBar
 import me.weishu.kernelsu.ui.component.rememberConfirmDialog
 import me.weishu.kernelsu.ui.component.rememberLoadingDialog
 import me.weishu.kernelsu.ui.util.DownloadListener
@@ -138,12 +139,8 @@ fun ModuleScreen(navigator: DestinationsNavigator) {
 
     Scaffold(
         topBar = {
-            SearchAppBar(
-                title = { Text(stringResource(R.string.module)) },
-                searchText = viewModel.search,
-                onSearchTextChange = { viewModel.search = it },
-                onClearClick = { viewModel.search = "" },
-                dropdownContent = {
+            TopAppBar(
+                actions = {
                     var showDropdown by remember { mutableStateOf(false) }
 
                     IconButton(
@@ -195,6 +192,8 @@ fun ModuleScreen(navigator: DestinationsNavigator) {
                     }
                 },
                 scrollBehavior = scrollBehavior,
+                title = { Text(stringResource(R.string.module)) },
+                windowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
             )
         },
         floatingActionButton = {
@@ -459,6 +458,7 @@ private fun ModuleList(
 
                 else -> {
                     items(viewModel.moduleList) { module ->
+                        var isChecked by rememberSaveable(module) { mutableStateOf(module.enabled) }
                         val scope = rememberCoroutineScope()
                         val updatedModule by produceState(initialValue = Triple("", "", "")) {
                             scope.launch(Dispatchers.IO) {
@@ -469,6 +469,7 @@ private fun ModuleList(
                         ModuleItem(
                             navigator = navigator,
                             module = module,
+                            isChecked = isChecked,
                             updateUrl = updatedModule.first,
                             onUninstall = {
                                 scope.launch { onModuleUninstall(module) }
@@ -477,10 +478,11 @@ private fun ModuleList(
                                 scope.launch {
                                     val success = loadingDialog.withLoading {
                                         withContext(Dispatchers.IO) {
-                                            toggleModule(module.id, !module.enabled)
+                                            toggleModule(module.id, !isChecked)
                                         }
                                     }
                                     if (success) {
+                                        isChecked = it
                                         viewModel.fetchModuleList()
 
                                         val result = snackBarHost.showSnackbar(
@@ -492,7 +494,7 @@ private fun ModuleList(
                                             reboot()
                                         }
                                     } else {
-                                        val message = if (module.enabled) failedDisable else failedEnable
+                                        val message = if (isChecked) failedDisable else failedEnable
                                         snackBarHost.showSnackbar(message.format(module.name))
                                     }
                                 }
@@ -528,6 +530,7 @@ private fun ModuleList(
 fun ModuleItem(
     navigator: DestinationsNavigator,
     module: ModuleViewModel.ModuleInfo,
+    isChecked: Boolean,
     updateUrl: String,
     onUninstall: (ModuleViewModel.ModuleInfo) -> Unit,
     onCheckChanged: (Boolean) -> Unit,
@@ -547,7 +550,7 @@ fun ModuleItem(
                 .run {
                     if (module.hasWebUi) {
                         toggleable(
-                            value = module.enabled,
+                            value = isChecked,
                             interactionSource = interactionSource,
                             role = Role.Button,
                             indication = indication,
@@ -603,7 +606,7 @@ fun ModuleItem(
                 ) {
                     Switch(
                         enabled = !module.update,
-                        checked = module.enabled,
+                        checked = isChecked,
                         onCheckedChange = onCheckChanged,
                         interactionSource = if (!module.hasWebUi) interactionSource else null
                     )
@@ -753,5 +756,5 @@ fun ModuleItemPreview() {
         hasWebUi = false,
         hasActionScript = false
     )
-    ModuleItem(EmptyDestinationsNavigator, module, "", {}, {}, {}, {})
+    ModuleItem(EmptyDestinationsNavigator, module, true, "", {}, {}, {}, {})
 }
